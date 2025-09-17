@@ -1,161 +1,248 @@
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { useAuth } from '../contexts/AuthContext'
+import { getTrajets, getTrajetStats } from '../lib/supabase'
+import { Trajet } from '../types/database'
 
 const Dashboard: React.FC = () => {
-  // Mock data - will be replaced with real data from Supabase
-  const stats = {
-    totalHours: 24.5,
-    totalKm: 156.8,
-    manoeuvres: 12,
-    cityPercentage: 65
+  const { user, isAnonymous } = useAuth()
+  const [stats, setStats] = useState({
+    totalHours: 0,
+    totalDistance: 0,
+    totalManoeuvres: 0,
+    averageCityPercentage: 0,
+    totalTrajets: 0
+  })
+  const [recentTrajets, setRecentTrajets] = useState<Trajet[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const loadData = async () => {
+      if (!user && !isAnonymous) return
+      
+      try {
+        if (user) {
+          // Load real data from Supabase
+          const [statsResult, trajetsResult] = await Promise.all([
+            getTrajetStats(user.id),
+            getTrajets(user.id, 5)
+          ])
+          
+          if (statsResult.data) {
+            setStats(statsResult.data)
+          }
+          
+          if (trajetsResult.data) {
+            setRecentTrajets(trajetsResult.data)
+          }
+        } else {
+          // Load from localStorage for anonymous users
+          const localTrajets = JSON.parse(localStorage.getItem('trajets') || '[]')
+          setRecentTrajets(localTrajets.slice(0, 5))
+          
+          // Calculate stats from localStorage
+          const localStats = localTrajets.reduce((acc: any, trajet: any) => {
+            acc.totalDistance += trajet.distance || 0
+            acc.totalDuration += trajet.duration || 0
+            acc.totalManoeuvres += trajet.manoeuvres || 0
+            acc.cityDriving += trajet.cityPercentage || 0
+            acc.totalTrajets += 1
+            return acc
+          }, {
+            totalDistance: 0,
+            totalDuration: 0,
+            totalManoeuvres: 0,
+            cityDriving: 0,
+            totalTrajets: 0
+          })
+          
+          setStats({
+            totalHours: Math.round(localStats.totalDuration / 3600 * 10) / 10,
+            totalDistance: localStats.totalDistance,
+            totalManoeuvres: localStats.totalManoeuvres,
+            averageCityPercentage: localStats.totalTrajets > 0 ? Math.round(localStats.cityDriving / localStats.totalTrajets) : 0,
+            totalTrajets: localStats.totalTrajets
+          })
+        }
+      } catch (error) {
+        console.error('Error loading dashboard data:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    loadData()
+  }, [user, isAnonymous])
+
+  const formatTime = (seconds: number): string => {
+    const hours = Math.floor(seconds / 3600)
+    const minutes = Math.floor((seconds % 3600) / 60)
+    return `${hours}h ${minutes}m`
   }
 
-  const recentTrajets = [
-    {
-      id: '1',
-      date: '2024-01-15',
-      duration: '1h 23m',
-      distance: '45.2 km',
-      manoeuvres: 3,
-      cityPercentage: 70,
-      isNight: false
-    },
-    {
-      id: '2',
-      date: '2024-01-14',
-      duration: '2h 15m',
-      distance: '78.5 km',
-      manoeuvres: 5,
-      cityPercentage: 45,
-      isNight: true
-    }
-  ]
+  const formatDate = (dateString: string): string => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric'
+    })
+  }
 
-  return (
-    <div className="p-4 space-y-6">
-      {/* Welcome Section */}
-      <div className="text-center py-4">
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">Welcome back!</h2>
-        <p className="text-gray-600">Track your driving habits</p>
-      </div>
-
-      {/* Stats Cards */}
-      <div className="grid grid-cols-2 gap-4">
-        <div className="ios-card p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600">Total Hours</p>
-              <p className="text-2xl font-bold text-gray-900">{stats.totalHours}h</p>
-            </div>
-            <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
-              <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-            </div>
+  if (loading) {
+    return (
+      <div className="p-4 space-y-6">
+        <div className="animate-pulse">
+          <div className="h-8 bg-gray-200 rounded mb-4"></div>
+          <div className="grid grid-cols-2 gap-4 mb-6">
+            {[...Array(4)].map((_, i) => (
+              <div key={i} className="h-24 bg-gray-200 rounded-2xl"></div>
+            ))}
+          </div>
+          <div className="space-y-3">
+            {[...Array(3)].map((_, i) => (
+              <div key={i} className="h-20 bg-gray-200 rounded-2xl"></div>
+            ))}
           </div>
         </div>
+      </div>
+    )
+  }
 
-        <div className="ios-card p-4">
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+      {/* Header */}
+      <div className="bg-white shadow-sm">
+        <div className="max-w-md mx-auto px-6 py-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600">Total KM</p>
-              <p className="text-2xl font-bold text-gray-900">{stats.totalKm}</p>
+              <h1 className="text-2xl font-bold text-gray-900">DriveFlow</h1>
+              <p className="text-gray-600 text-sm">Track your driving habits</p>
             </div>
-            <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center">
-              <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-full flex items-center justify-center">
+              <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
               </svg>
             </div>
           </div>
         </div>
-
-        <div className="ios-card p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600">Manoeuvres</p>
-              <p className="text-2xl font-bold text-gray-900">{stats.manoeuvres}</p>
-            </div>
-            <div className="w-12 h-12 bg-orange-100 rounded-xl flex items-center justify-center">
-              <svg className="w-6 h-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-              </svg>
-            </div>
-          </div>
-        </div>
-
-        <div className="ios-card p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600">% City</p>
-              <p className="text-2xl font-bold text-gray-900">{stats.cityPercentage}%</p>
-            </div>
-            <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center">
-              <svg className="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-              </svg>
-            </div>
-          </div>
-        </div>
       </div>
 
-      {/* Recent Trajets */}
-      <div>
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold text-gray-900">Recent Trajets</h3>
-          <Link to="/trajets" className="text-blue-600 text-sm font-medium">
-            View All
-          </Link>
+      <div className="max-w-md mx-auto px-6 py-6 space-y-6">
+        {/* Stats Overview */}
+        <div className="bg-white rounded-3xl p-6 shadow-lg">
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Your Driving Stats</h2>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="text-center">
+              <div className="text-3xl font-bold text-blue-600">{stats.totalHours}h</div>
+              <div className="text-sm text-gray-600">Total Time</div>
+            </div>
+            <div className="text-center">
+              <div className="text-3xl font-bold text-green-600">{stats.totalDistance.toFixed(1)}km</div>
+              <div className="text-sm text-gray-600">Distance</div>
+            </div>
+            <div className="text-center">
+              <div className="text-3xl font-bold text-orange-600">{stats.totalManoeuvres}</div>
+              <div className="text-sm text-gray-600">Manoeuvres</div>
+            </div>
+            <div className="text-center">
+              <div className="text-3xl font-bold text-purple-600">{stats.averageCityPercentage}%</div>
+              <div className="text-sm text-gray-600">City Driving</div>
+            </div>
+          </div>
         </div>
 
-        <div className="space-y-3">
-          {recentTrajets.map((trajet) => (
-            <div key={trajet.id} className="ios-card p-4">
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center space-x-2">
-                  <span className="text-sm font-medium text-gray-900">{trajet.date}</span>
-                  {trajet.isNight && (
-                    <span className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-full">
-                      Night
-                    </span>
-                  )}
+        {/* Recent Trajets */}
+        <div>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold text-gray-900">Recent Drives</h3>
+            <Link to="/trajets" className="text-blue-600 text-sm font-medium">
+              View All
+            </Link>
+          </div>
+
+          <div className="space-y-3">
+            {recentTrajets.length > 0 ? (
+              recentTrajets.map((trajet) => (
+                <div key={trajet.id} className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-full flex items-center justify-center">
+                        <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                        </svg>
+                      </div>
+                      <div>
+                        <div className="font-medium text-gray-900">{formatDate(trajet.start_time)}</div>
+                        <div className="text-sm text-gray-600">
+                          {trajet.is_night ? '🌙 Night Drive' : '☀️ Day Drive'}
+                        </div>
+                      </div>
+                    </div>
+                    <Link
+                      to={`/map/${trajet.id}`}
+                      className="text-blue-600 hover:text-blue-800 p-2"
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                      </svg>
+                    </Link>
+                  </div>
+                  <div className="grid grid-cols-3 gap-4 text-sm">
+                    <div>
+                      <p className="text-gray-600">Duration</p>
+                      <p className="font-medium">{formatTime(trajet.duration_seconds || 0)}</p>
+                    </div>
+                    <div>
+                      <p className="text-gray-600">Distance</p>
+                      <p className="font-medium">{trajet.distance_km.toFixed(1)}km</p>
+                    </div>
+                    <div>
+                      <p className="text-gray-600">City %</p>
+                      <p className="font-medium">{trajet.city_percentage}%</p>
+                    </div>
+                  </div>
                 </div>
-                <Link
-                  to={`/map/${trajet.id}`}
-                  className="text-blue-600 hover:text-blue-800"
-                >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+              ))
+            ) : (
+              <div className="bg-white rounded-2xl p-8 text-center">
+                <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
                   </svg>
+                </div>
+                <h3 className="text-lg font-medium text-gray-900 mb-2">No drives yet</h3>
+                <p className="text-gray-600 mb-4">Start tracking your driving habits</p>
+                <Link to="/add-trajet" className="inline-block bg-gradient-to-r from-blue-500 to-indigo-600 text-white px-6 py-3 rounded-xl font-medium">
+                  Start Your First Drive
                 </Link>
               </div>
-              <div className="grid grid-cols-3 gap-4 text-sm">
-                <div>
-                  <p className="text-gray-600">Duration</p>
-                  <p className="font-medium">{trajet.duration}</p>
-                </div>
-                <div>
-                  <p className="text-gray-600">Distance</p>
-                  <p className="font-medium">{trajet.distance}</p>
-                </div>
-                <div>
-                  <p className="text-gray-600">City %</p>
-                  <p className="font-medium">{trajet.cityPercentage}%</p>
-                </div>
-              </div>
-            </div>
-          ))}
+            )}
+          </div>
         </div>
-      </div>
 
-      {/* Quick Actions */}
-      <div className="pt-4">
-        <Link
-          to="/add-trajet"
-          className="ios-button w-full text-center block"
-        >
-          Start New Trajet
-        </Link>
+        {/* Quick Actions */}
+        <div className="space-y-3">
+          <Link
+            to="/add-trajet"
+            className="block w-full bg-gradient-to-r from-blue-500 to-indigo-600 text-white text-center py-4 rounded-2xl font-medium text-lg shadow-lg"
+          >
+            Start New Drive
+          </Link>
+          <div className="grid grid-cols-2 gap-3">
+            <Link
+              to="/trajets"
+              className="bg-white text-gray-700 text-center py-3 rounded-xl font-medium shadow-sm border border-gray-200"
+            >
+              View History
+            </Link>
+            <Link
+              to="/profile"
+              className="bg-white text-gray-700 text-center py-3 rounded-xl font-medium shadow-sm border border-gray-200"
+            >
+              Profile
+            </Link>
+          </div>
+        </div>
       </div>
     </div>
   )

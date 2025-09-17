@@ -5,6 +5,7 @@ import TrajetsList from './pages/TrajetsList'
 import AddTrajet from './pages/AddTrajet'
 import MapView from './pages/MapView'
 import Login from './pages/Login'
+import Profile from './pages/Profile'
 import Layout from './components/Layout'
 
 function App() {
@@ -18,6 +19,7 @@ function App() {
             <Route path="/trajets" element={<TrajetsList />} />
             <Route path="/add-trajet" element={<AddTrajet />} />
             <Route path="/map/:id" element={<MapView />} />
+            <Route path="/profile" element={<Profile />} />
           </Routes>
         </Layout>
       </Router>

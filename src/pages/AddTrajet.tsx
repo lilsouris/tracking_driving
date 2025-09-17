@@ -1,19 +1,18 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
-
-interface Position {
-  latitude: number
-  longitude: number
-  timestamp: number
-}
+import { useAuth } from '../contexts/AuthContext'
+import { createTrajet, updateTrajet } from '../lib/supabase'
+import { GPSPosition } from '../types/database'
 
 const AddTrajet: React.FC = () => {
+  const { user, isAnonymous } = useAuth()
   const [isTracking, setIsTracking] = useState(false)
   const [startTime, setStartTime] = useState<Date | null>(null)
   const [elapsedTime, setElapsedTime] = useState(0)
-  const [positions, setPositions] = useState<Position[]>([])
+  const [positions, setPositions] = useState<GPSPosition[]>([])
   const [error, setError] = useState('')
   const [watchId, setWatchId] = useState<number | null>(null)
+  const [currentTrajetId, setCurrentTrajetId] = useState<string | null>(null)
   const navigate = useNavigate()
   const intervalRef = useRef<NodeJS.Timeout | null>(null)
 
@@ -67,6 +66,29 @@ const AddTrajet: React.FC = () => {
       setIsTracking(true)
       setError('')
 
+      // Create trajet in database
+      if (user) {
+        const { data: trajetData, error: trajetError } = await createTrajet({
+          user_id: user.id,
+          start_time: now.toISOString(),
+          distance_km: 0,
+          manoeuvres: 0,
+          city_percentage: 0,
+          route_type: 'mixed',
+          is_night: now.getHours() < 6 || now.getHours() > 18,
+          gps_trace: []
+        })
+
+        if (trajetError) {
+          setError('Failed to create trajet: ' + trajetError.message)
+          return
+        }
+
+        if (trajetData) {
+          setCurrentTrajetId(trajetData.id)
+        }
+      }
+
       // Start timer
       intervalRef.current = setInterval(() => {
         setElapsedTime(prev => prev + 1)
@@ -75,12 +97,28 @@ const AddTrajet: React.FC = () => {
       // Start GPS tracking
       const id = navigator.geolocation.watchPosition(
         (position) => {
-          const newPosition: Position = {
+          const newPosition: GPSPosition = {
             latitude: position.coords.latitude,
             longitude: position.coords.longitude,
-            timestamp: Date.now()
+            timestamp: Date.now(),
+            accuracy: position.coords.accuracy,
+            altitude: position.coords.altitude,
+            speed: position.coords.speed
           }
           setPositions(prev => [...prev, newPosition])
+          
+          // Update trajet in database with new GPS data
+          if (user && currentTrajetId) {
+            updateTrajet(currentTrajetId, {
+              gps_trace: [...positions, newPosition],
+              distance_km: totalDistance + calculateDistance(
+                positions[positions.length - 1]?.latitude || newPosition.latitude,
+                positions[positions.length - 1]?.longitude || newPosition.longitude,
+                newPosition.latitude,
+                newPosition.longitude
+              )
+            })
+          }
         },
         (error) => {
           console.error('GPS error:', error)
@@ -125,23 +163,40 @@ const AddTrajet: React.FC = () => {
     // Calculate manoeuvres (mock calculation based on distance and time)
     const manoeuvres = Math.floor(totalDistance / 10) + Math.floor(duration / 1800)
 
-    const trajetData = {
-      id: Date.now().toString(),
-      startTime: startTime.toISOString(),
-      endTime: endTime.toISOString(),
-      duration,
-      distance: totalDistance,
-      manoeuvres,
-      cityPercentage: Math.round(cityPercentage),
-      isNight: startTime.getHours() < 6 || startTime.getHours() > 18,
-      positions
-    }
-
     try {
-      // Save to localStorage for now (will be replaced with Supabase)
-      const existingTrajets = JSON.parse(localStorage.getItem('trajets') || '[]')
-      existingTrajets.unshift(trajetData)
-      localStorage.setItem('trajets', JSON.stringify(existingTrajets))
+      if (user && currentTrajetId) {
+        // Update existing trajet in Supabase
+        const { error } = await updateTrajet(currentTrajetId, {
+          end_time: endTime.toISOString(),
+          duration_seconds: duration,
+          distance_km: totalDistance,
+          manoeuvres,
+          city_percentage: Math.round(cityPercentage),
+          gps_trace: positions
+        })
+
+        if (error) {
+          setError('Failed to save trajet: ' + error.message)
+          return
+        }
+      } else {
+        // Save to localStorage for anonymous users
+        const trajetData = {
+          id: Date.now().toString(),
+          startTime: startTime.toISOString(),
+          endTime: endTime.toISOString(),
+          duration,
+          distance: totalDistance,
+          manoeuvres,
+          cityPercentage: Math.round(cityPercentage),
+          isNight: startTime.getHours() < 6 || startTime.getHours() > 18,
+          positions
+        }
+
+        const existingTrajets = JSON.parse(localStorage.getItem('trajets') || '[]')
+        existingTrajets.unshift(trajetData)
+        localStorage.setItem('trajets', JSON.stringify(existingTrajets))
+      }
       
       navigate('/trajets')
     } catch (err) {
