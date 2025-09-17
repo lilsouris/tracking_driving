@@ -108,14 +108,14 @@ const Dashboard: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+    <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <div className="bg-white shadow-sm">
         <div className="max-w-md mx-auto px-6 py-6">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">DriveFlow</h1>
-              <p className="text-gray-600 text-sm">Track your driving habits</p>
+              <h1 className="text-2xl font-bold text-gray-900">Accueil</h1>
+              <p className="text-gray-600 text-sm">Bienvenue sur DriveFlow</p>
             </div>
             <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-full flex items-center justify-center">
               <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -129,11 +129,11 @@ const Dashboard: React.FC = () => {
       <div className="max-w-md mx-auto px-6 py-6 space-y-6">
         {/* Stats Overview */}
         <div className="bg-white rounded-3xl p-6 shadow-lg">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Your Driving Stats</h2>
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Vos statistiques de conduite</h2>
           <div className="grid grid-cols-2 gap-4">
             <div className="text-center">
               <div className="text-3xl font-bold text-blue-600">{stats.totalHours}h</div>
-              <div className="text-sm text-gray-600">Total Time</div>
+              <div className="text-sm text-gray-600">Temps total</div>
             </div>
             <div className="text-center">
               <div className="text-3xl font-bold text-green-600">{stats.totalDistance.toFixed(1)}km</div>
@@ -145,7 +145,7 @@ const Dashboard: React.FC = () => {
             </div>
             <div className="text-center">
               <div className="text-3xl font-bold text-purple-600">{stats.averageCityPercentage}%</div>
-              <div className="text-sm text-gray-600">City Driving</div>
+              <div className="text-sm text-gray-600">Conduite urbaine</div>
             </div>
           </div>
         </div>
@@ -153,9 +153,9 @@ const Dashboard: React.FC = () => {
         {/* Recent Trajets */}
         <div>
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-gray-900">Recent Drives</h3>
+            <h3 className="text-lg font-semibold text-gray-900">Trajets récents</h3>
             <Link to="/trajets" className="text-blue-600 text-sm font-medium">
-              View All
+              Voir tout
             </Link>
           </div>
 
@@ -173,7 +173,7 @@ const Dashboard: React.FC = () => {
                       <div>
                         <div className="font-medium text-gray-900">{formatDate(trajet.start_time)}</div>
                         <div className="text-sm text-gray-600">
-                          {trajet.is_night ? '🌙 Night Drive' : '☀️ Day Drive'}
+                          {trajet.is_night ? '🌙 Conduite nocturne' : '☀️ Conduite diurne'}
                         </div>
                       </div>
                     </div>
@@ -189,7 +189,7 @@ const Dashboard: React.FC = () => {
                   </div>
                   <div className="grid grid-cols-3 gap-4 text-sm">
                     <div>
-                      <p className="text-gray-600">Duration</p>
+                      <p className="text-gray-600">Durée</p>
                       <p className="font-medium">{formatTime(trajet.duration_seconds || 0)}</p>
                     </div>
                     <div>
@@ -197,7 +197,7 @@ const Dashboard: React.FC = () => {
                       <p className="font-medium">{trajet.distance_km.toFixed(1)}km</p>
                     </div>
                     <div>
-                      <p className="text-gray-600">City %</p>
+                      <p className="text-gray-600">Urbain %</p>
                       <p className="font-medium">{trajet.city_percentage}%</p>
                     </div>
                   </div>
@@ -210,10 +210,10 @@ const Dashboard: React.FC = () => {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
                   </svg>
                 </div>
-                <h3 className="text-lg font-medium text-gray-900 mb-2">No drives yet</h3>
-                <p className="text-gray-600 mb-4">Start tracking your driving habits</p>
+                <h3 className="text-lg font-medium text-gray-900 mb-2">Aucun trajet pour le moment</h3>
+                <p className="text-gray-600 mb-4">Commencez à suivre vos habitudes de conduite</p>
                 <Link to="/add-trajet" className="inline-block bg-gradient-to-r from-blue-500 to-indigo-600 text-white px-6 py-3 rounded-xl font-medium">
-                  Start Your First Drive
+                  Commencer votre premier trajet
                 </Link>
               </div>
             )}
@@ -226,20 +226,20 @@ const Dashboard: React.FC = () => {
             to="/add-trajet"
             className="block w-full bg-gradient-to-r from-blue-500 to-indigo-600 text-white text-center py-4 rounded-2xl font-medium text-lg shadow-lg"
           >
-            Start New Drive
+            Nouveau trajet
           </Link>
           <div className="grid grid-cols-2 gap-3">
             <Link
               to="/trajets"
               className="bg-white text-gray-700 text-center py-3 rounded-xl font-medium shadow-sm border border-gray-200"
             >
-              View History
+              Historique
             </Link>
             <Link
               to="/profile"
               className="bg-white text-gray-700 text-center py-3 rounded-xl font-medium shadow-sm border border-gray-200"
             >
-              Profile
+              Profil
             </Link>
           </div>
         </div>
