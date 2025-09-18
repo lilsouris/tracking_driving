@@ -13,6 +13,7 @@ const AddTrajet: React.FC = () => {
   const [distanceKm, setDistanceKm] = useState(0)
   const [error, setError] = useState('')
   const [watchId, setWatchId] = useState<number | null>(null)
+  const [gpsActive, setGpsActive] = useState(false)
   const [currentTrajetId, setCurrentTrajetId] = useState<string | null>(null)
   const navigate = useNavigate()
   const intervalRef = useRef<NodeJS.Timeout | null>(null)
@@ -146,29 +147,6 @@ const AddTrajet: React.FC = () => {
       lastSyncAtRef.current = Date.now()
       unsyncedKmRef.current = 0
 
-      // Create trajet in database
-      if (user) {
-        const { data: trajetData, error: trajetError } = await createTrajet({
-          user_id: user.id,
-          start_time: now.toISOString(),
-          distance_km: 0,
-          manoeuvres: 0,
-          city_percentage: 0,
-          route_type: 'mixed',
-          is_night: now.getHours() < 6 || now.getHours() > 18,
-          gps_trace: []
-        })
-
-        if (trajetError) {
-          setError('Failed to create trajet: ' + trajetError.message)
-          return
-        }
-
-        if (trajetData) {
-          setCurrentTrajetId(trajetData.id)
-        }
-      }
-
       // Start timer
       intervalRef.current = setInterval(() => {
         setElapsedTime(prev => prev + 1)
@@ -177,6 +155,7 @@ const AddTrajet: React.FC = () => {
       // Start GPS tracking (this will trigger the native prompt if state is 'prompt' or 'unsupported')
       const id = navigator.geolocation.watchPosition(
         (position) => {
+          setGpsActive(true)
           const newPosition: GPSPosition = {
             latitude: position.coords.latitude,
             longitude: position.coords.longitude,
@@ -230,6 +209,34 @@ const AddTrajet: React.FC = () => {
       )
       setWatchId(id)
 
+      // Create trajet in database (non-blocking). If it fails, tracking continues and we retry save at the end.
+      ;(async () => {
+        if (!user) return
+        const { data: trajetData, error: trajetError } = await createTrajet({
+          user_id: user.id,
+          start_time: now.toISOString(),
+          distance_km: 0,
+          manoeuvres: 0,
+          city_percentage: 0,
+          route_type: 'mixed',
+          is_night: now.getHours() < 6 || now.getHours() > 18,
+          gps_trace: []
+        })
+        if (trajetError) {
+          console.error('Failed to create trajet:', trajetError)
+          return
+        }
+        if (trajetData) {
+          setCurrentTrajetId(trajetData.id)
+          // Push current buffered state immediately
+          await updateTrajet(trajetData.id, {
+            gps_trace: positions,
+            distance_km: distanceKm,
+            duration_seconds: 0
+          })
+        }
+      })()
+
     } catch (err) {
       setError('Failed to start tracking: ' + (err as Error).message)
     }
@@ -246,6 +253,7 @@ const AddTrajet: React.FC = () => {
       navigator.geolocation.clearWatch(watchId)
       setWatchId(null)
     }
+    setGpsActive(false)
   }
 
   // Save trajet
@@ -430,9 +438,9 @@ const AddTrajet: React.FC = () => {
         <div className="flex items-center justify-between">
           <span className="text-sm font-medium text-gray-700">GPS Status</span>
           <div className="flex items-center space-x-2">
-            <div className={`w-3 h-3 rounded-full ${positions.length > 0 ? 'bg-green-500' : 'bg-gray-300'}`}></div>
+            <div className={`w-3 h-3 rounded-full ${gpsActive ? 'bg-green-500' : 'bg-gray-300'}`}></div>
             <span className="text-sm text-gray-600">
-              {positions.length > 0 ? 'Active' : 'Inactive'}
+              {gpsActive ? 'Active' : 'Inactive'}
             </span>
           </div>
         </div>
