@@ -44,11 +44,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             setProfile(profileData)
           }
         } else {
-          // Check for anonymous user in localStorage
-          const anonymousUser = localStorage.getItem('anonymous_user')
-          if (anonymousUser) {
-            setIsAnonymous(true)
-          }
+          // No authenticated user, set as anonymous
+          setIsAnonymous(true)
+          // Set anonymous user flag in localStorage
+          localStorage.setItem('anonymous_user', 'true')
         }
       } catch (error) {
         console.error('Error checking user:', error)
@@ -74,11 +73,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         } else {
           setUser(null)
           setProfile(null)
-          // Set anonymous user if no auth
-          if (!localStorage.getItem('anonymous_user')) {
-            localStorage.setItem('anonymous_user', 'true')
-            setIsAnonymous(true)
-          }
+          // Set anonymous user when no auth
+          localStorage.setItem('anonymous_user', 'true')
+          setIsAnonymous(true)
         }
         setLoading(false)
       }

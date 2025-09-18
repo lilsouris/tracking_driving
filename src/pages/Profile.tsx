@@ -93,6 +93,9 @@ const Profile: React.FC = () => {
     )
   }
 
+  // Debug logging
+  console.log('Profile page - user:', user, 'isAnonymous:', isAnonymous, 'loading:', loading)
+
   // Show auth form if in guest mode
   if (isAnonymous) {
     return (
