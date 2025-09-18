@@ -34,4 +34,17 @@ export default defineConfig({
       }
     })
   ],
+  build: {
+    chunkSizeWarningLimit: 900,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          react: ['react', 'react-dom'],
+          router: ['react-router-dom'],
+          leaflet: ['leaflet', 'react-leaflet'],
+          supabase: ['@supabase/supabase-js']
+        }
+      }
+    }
+  }
 })
