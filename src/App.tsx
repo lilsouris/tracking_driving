@@ -1,6 +1,6 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 import { AuthProvider } from './contexts/AuthContext'
-import React, { Suspense, lazy } from 'react'
+import { Suspense, lazy } from 'react'
 const Dashboard = lazy(() => import('./pages/Dashboard'))
 const TrajetsList = lazy(() => import('./pages/TrajetsList'))
 const AddTrajet = lazy(() => import('./pages/AddTrajet'))
