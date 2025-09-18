@@ -108,7 +108,7 @@ const Dashboard: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
+    <div className="min-h-screen bg-gray-50">
 
       <div className="max-w-md mx-auto px-5 py-6 space-y-6">
         {/* Stats Overview */}
@@ -117,33 +117,41 @@ const Dashboard: React.FC = () => {
           <p className="text-gray-500 mb-5">Suivez votre progression en conduite supervisée</p>
           <div className="grid grid-cols-2 gap-4">
             {/* Card */}
-            <div className="rounded-2xl bg-gray-100 p-5 shadow-sm">
-              <div className="flex items-center gap-2 text-blue-600 mb-2">
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                <span className="text-sm">Heures totales</span>
+            <div className="rounded-xl bg-white p-5 shadow-sm border border-gray-100">
+              <div className="flex flex-col items-center text-center">
+                <div className="w-8 h-8 text-blue-500 mb-3">
+                  <svg className="w-full h-full" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                </div>
+                <div className="text-3xl font-bold text-gray-900 mb-1">{Number(stats.totalHours || 0).toFixed(1)}h</div>
+                <div className="text-sm text-gray-500">Heures totales</div>
               </div>
-              <div className="text-3xl font-semibold text-gray-900">{Number(stats.totalHours || 0).toFixed(1)}h</div>
             </div>
-            <div className="rounded-2xl bg-gray-100 p-5 shadow-sm">
-              <div className="flex items-center gap-2 text-blue-600 mb-2">
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a2 2 0 01-2.828 0L6.343 16.657a8 8 0 1111.314 0z"/></svg>
-                <span className="text-sm">Km parcourus</span>
+            <div className="rounded-xl bg-white p-5 shadow-sm border border-gray-100">
+              <div className="flex flex-col items-center text-center">
+                <div className="w-8 h-8 text-blue-500 mb-3">
+                  <svg className="w-full h-full" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a2 2 0 01-2.828 0L6.343 16.657a8 8 0 1111.314 0z"/></svg>
+                </div>
+                <div className="text-3xl font-bold text-gray-900 mb-1">{(stats.totalDistance ?? 0).toFixed(1)}</div>
+                <div className="text-sm text-gray-500">Km parcourus</div>
               </div>
-              <div className="text-3xl font-semibold text-gray-900">{(stats.totalDistance ?? 0).toFixed(1)}</div>
             </div>
-            <div className="rounded-2xl bg-gray-100 p-5 shadow-sm">
-              <div className="flex items-center gap-2 text-blue-600 mb-2">
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
-                <span className="text-sm">Manœuvres</span>
+            <div className="rounded-xl bg-white p-5 shadow-sm border border-gray-100">
+              <div className="flex flex-col items-center text-center">
+                <div className="w-8 h-8 text-blue-500 mb-3">
+                  <svg className="w-full h-full" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                </div>
+                <div className="text-3xl font-bold text-gray-900 mb-1">{stats.totalManoeuvres ?? 0}</div>
+                <div className="text-sm text-gray-500">Manœuvres</div>
               </div>
-              <div className="text-3xl font-semibold text-gray-900">{stats.totalManoeuvres ?? 0}</div>
             </div>
-            <div className="rounded-2xl bg-gray-100 p-5 shadow-sm">
-              <div className="flex items-center gap-2 text-blue-600 mb-2">
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16"/></svg>
-                <span className="text-sm">Conduite ville</span>
+            <div className="rounded-xl bg-white p-5 shadow-sm border border-gray-100">
+              <div className="flex flex-col items-center text-center">
+                <div className="w-8 h-8 text-blue-500 mb-3">
+                  <svg className="w-full h-full" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16"/></svg>
+                </div>
+                <div className="text-3xl font-bold text-gray-900 mb-1">{stats.averageCityPercentage ?? 0}%</div>
+                <div className="text-sm text-gray-500">Conduite ville</div>
               </div>
-              <div className="text-3xl font-semibold text-gray-900">{stats.averageCityPercentage ?? 0}%</div>
             </div>
           </div>
         </div>
