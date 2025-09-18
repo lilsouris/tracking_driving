@@ -14,18 +14,28 @@ const Dashboard: React.FC = () => {
     totalTrajets: 0
   })
   const [recentTrajets, setRecentTrajets] = useState<Trajet[]>([])
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(false)
 
   useEffect(() => {
     const loadData = async () => {
-      if (!user && !isAnonymous) return
+      if (!user && !isAnonymous) {
+        // Auth state not resolved yet; avoid infinite skeleton
+        setLoading(false)
+        return
+      }
       
       try {
         if (user) {
+          const withTimeout = async (p: Promise<any>, ms = 5000) => {
+            return Promise.race([
+              p,
+              new Promise((resolve) => setTimeout(() => resolve({ data: null }), ms))
+            ])
+          }
           // Load real data from Supabase
           const [statsResult, trajetsResult] = await Promise.all([
-            getTrajetStats(user.id),
-            getTrajets(user.id, 5)
+            withTimeout(getTrajetStats(user.id)),
+            withTimeout(getTrajets(user.id, 5))
           ])
           
           if (statsResult.data) {
@@ -87,25 +97,7 @@ const Dashboard: React.FC = () => {
     })
   }
 
-  if (loading) {
-    return (
-      <div className="p-4 space-y-6">
-        <div className="animate-pulse">
-          <div className="h-8 bg-gray-200 rounded mb-4"></div>
-          <div className="grid grid-cols-2 gap-4 mb-6">
-            {[...Array(4)].map((_, i) => (
-              <div key={i} className="h-24 bg-gray-200 rounded-2xl"></div>
-            ))}
-          </div>
-          <div className="space-y-3">
-            {[...Array(3)].map((_, i) => (
-              <div key={i} className="h-20 bg-gray-200 rounded-2xl"></div>
-            ))}
-          </div>
-        </div>
-      </div>
-    )
-  }
+  // Non-blocking: we no longer block the page on loading; content uses placeholders
 
   return (
     <div className="min-h-screen bg-gray-50">
