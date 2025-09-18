@@ -3,7 +3,7 @@ import { useAuth } from '../contexts/AuthContext'
 import { getTrajetStats } from '../lib/supabase'
 
 const Profile: React.FC = () => {
-  const { user, profile, updateProfile, isAnonymous } = useAuth()
+  const { user, profile, updateProfile, isAnonymous, signIn, signUp } = useAuth()
   const [stats, setStats] = useState({
     totalHours: 0,
     totalDistance: 0,
@@ -17,6 +17,13 @@ const Profile: React.FC = () => {
     full_name: profile?.full_name || '',
     phone: profile?.phone || ''
   })
+  
+  // Auth form states
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [isSignUp, setIsSignUp] = useState(false)
+  const [authLoading, setAuthLoading] = useState(false)
+  const [authError, setAuthError] = useState('')
 
   useEffect(() => {
     const loadStats = async () => {
@@ -52,6 +59,26 @@ const Profile: React.FC = () => {
     }
   }
 
+  const handleAuthSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setAuthLoading(true)
+    setAuthError('')
+
+    try {
+      const { error } = isSignUp 
+        ? await signUp(email, password)
+        : await signIn(email, password)
+
+      if (error) {
+        setAuthError(error.message)
+      }
+    } catch (err) {
+      setAuthError('An unexpected error occurred')
+    } finally {
+      setAuthLoading(false)
+    }
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
@@ -66,28 +93,110 @@ const Profile: React.FC = () => {
     )
   }
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
-      {/* Header */}
-      <div className="bg-white/80 backdrop-blur-sm shadow-sm">
-        <div className="max-w-md mx-auto px-6 py-6">
-          <div className="flex items-center justify-between">
-            <h1 className="text-2xl font-bold text-gray-900">Profil</h1>
-            {user && (
+  // Show auth form if in guest mode
+  if (isAnonymous) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+        <div className="w-full max-w-md">
+          <div className="bg-white rounded-2xl p-8 shadow-sm border border-gray-100">
+            <div className="text-center mb-8">
+              <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                </svg>
+              </div>
+              <h1 className="text-2xl font-bold text-gray-900 mb-2">Créer un compte</h1>
+              <p className="text-gray-600">
+                {isSignUp ? 'Inscrivez-vous pour sauvegarder vos données' : 'Connectez-vous à votre compte'}
+              </p>
+            </div>
+
+            <form onSubmit={handleAuthSubmit} className="space-y-6">
+              <div>
+                <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+                  Email
+                </label>
+                <input
+                  id="email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Entrez votre email"
+                  required
+                />
+              </div>
+
+              <div>
+                <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
+                  Mot de passe
+                </label>
+                <input
+                  id="password"
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Entrez votre mot de passe"
+                  required
+                  minLength={6}
+                />
+              </div>
+
+              {authError && (
+                <div className="bg-red-50 border border-red-200 rounded-xl p-3">
+                  <p className="text-red-600 text-sm">{authError}</p>
+                </div>
+              )}
+
               <button
-                onClick={() => setEditing(!editing)}
-                className="text-blue-600 hover:text-blue-800 font-medium"
+                type="submit"
+                disabled={authLoading}
+                className="w-full bg-gradient-to-r from-blue-500 to-indigo-600 text-white py-3 rounded-xl font-medium disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {editing ? 'Annuler' : 'Modifier'}
+                {authLoading ? 'Chargement...' : (isSignUp ? 'S\'inscrire' : 'Se connecter')}
               </button>
-            )}
+            </form>
+
+            <div className="mt-6 text-center">
+              <button
+                onClick={() => setIsSignUp(!isSignUp)}
+                className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+              >
+                {isSignUp ? 'Déjà un compte ? Se connecter' : 'Pas de compte ? S\'inscrire'}
+              </button>
+            </div>
+
+            <div className="mt-8 pt-6 border-t border-gray-200">
+              <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
+                <p className="text-sm text-blue-800 text-center">
+                  <strong>Mode invité actuel :</strong> Vos données sont sauvegardées localement. 
+                  Créez un compte pour les synchroniser et y accéder depuis n'importe quel appareil.
+                </p>
+              </div>
+            </div>
           </div>
         </div>
       </div>
+    )
+  }
 
+  return (
+    <div className="min-h-screen bg-gray-50">
       <div className="max-w-md mx-auto px-6 py-6 space-y-6">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <h1 className="text-2xl font-bold text-gray-900">Profil</h1>
+          <button
+            onClick={() => setEditing(!editing)}
+            className="text-blue-600 hover:text-blue-800 font-medium"
+          >
+            {editing ? 'Annuler' : 'Modifier'}
+          </button>
+        </div>
+
         {/* Profile Card */}
-        <div className="bg-white/90 backdrop-blur-sm rounded-3xl p-6 shadow-xl border border-white/20">
+        <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
           <div className="text-center">
             <div className="w-20 h-20 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-full flex items-center justify-center mx-auto mb-4">
               <span className="text-2xl font-bold text-white">
@@ -137,20 +246,13 @@ const Profile: React.FC = () => {
                 {profile?.phone && (
                   <p className="text-gray-600">{profile.phone}</p>
                 )}
-                {isAnonymous && (
-                  <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-xl">
-                    <p className="text-sm text-yellow-800">
-                      Vous utilisez le mode invité. Inscrivez-vous pour sauvegarder vos données de façon permanente.
-                    </p>
-                  </div>
-                )}
               </div>
             )}
           </div>
         </div>
 
         {/* Stats Card */}
-        <div className="bg-white/90 backdrop-blur-sm rounded-3xl p-6 shadow-xl border border-white/20">
+        <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Vos statistiques</h3>
           <div className="grid grid-cols-2 gap-4">
             <div className="text-center">
@@ -173,7 +275,7 @@ const Profile: React.FC = () => {
         </div>
 
         {/* Settings Card */}
-        <div className="bg-white/90 backdrop-blur-sm rounded-3xl p-6 shadow-xl border border-white/20">
+        <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Paramètres</h3>
           <div className="space-y-4">
             <div className="flex items-center justify-between">
@@ -198,7 +300,7 @@ const Profile: React.FC = () => {
         </div>
 
         {/* App Info */}
-        <div className="bg-white/90 backdrop-blur-sm rounded-3xl p-6 shadow-xl border border-white/20">
+        <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">À propos de DriveFlow</h3>
           <div className="space-y-3 text-sm text-gray-600">
             <p>Version 1.0.0</p>
