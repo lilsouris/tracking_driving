@@ -15,6 +15,7 @@ const AddTrajet: React.FC = () => {
   const [currentTrajetId, setCurrentTrajetId] = useState<string | null>(null)
   const navigate = useNavigate()
   const intervalRef = useRef<NodeJS.Timeout | null>(null)
+  const [geoPermissionState, setGeoPermissionState] = useState<PermissionState | 'unsupported'>('prompt')
 
   // Calculate distance between two points (Haversine formula)
   const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
@@ -46,6 +47,31 @@ const AddTrajet: React.FC = () => {
     return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
   }
 
+  // Check geolocation permission using Permissions API
+  const ensureGeoPermission = async (): Promise<PermissionState | 'unsupported'> => {
+    if (!('permissions' in navigator)) {
+      setGeoPermissionState('unsupported')
+      return 'unsupported'
+    }
+    try {
+      const status = await (navigator as any).permissions.query({ name: 'geolocation' as PermissionName })
+      setGeoPermissionState(status.state)
+      // Keep state updated if it changes
+      if (typeof status.onchange === 'object' || typeof status.onchange === 'function') {
+        status.onchange = () => setGeoPermissionState(status.state)
+      }
+      return status.state
+    } catch {
+      setGeoPermissionState('unsupported')
+      return 'unsupported'
+    }
+  }
+
+  useEffect(() => {
+    // Preload permission state
+    ensureGeoPermission()
+  }, [])
+
   // Start tracking
   const startTracking = async () => {
     if (!navigator.geolocation) {
@@ -54,10 +80,9 @@ const AddTrajet: React.FC = () => {
     }
 
     try {
-      // Request location permission
-      const permission = await navigator.requestPermission?.() || 'granted'
-      if (permission !== 'granted') {
-        setError('Location permission denied')
+      const permission = await ensureGeoPermission()
+      if (permission === 'denied') {
+        setError('Location permission denied. Please enable it in your browser settings.')
         return
       }
 
@@ -94,7 +119,7 @@ const AddTrajet: React.FC = () => {
         setElapsedTime(prev => prev + 1)
       }, 1000)
 
-      // Start GPS tracking
+      // Start GPS tracking (this will trigger the native prompt if state is 'prompt' or 'unsupported')
       const id = navigator.geolocation.watchPosition(
         (position) => {
           const newPosition: GPSPosition = {
@@ -223,6 +248,21 @@ const AddTrajet: React.FC = () => {
         <h1 className="text-2xl font-bold text-gray-900 mb-2">Track Trajet</h1>
         <p className="text-gray-600">Start tracking your driving session</p>
       </div>
+
+      {/* Pre-permission note */}
+      {!isTracking && (
+        <div className="ios-card p-4 bg-blue-50 border border-blue-100">
+          <p className="text-sm text-blue-900">
+            We use your location to record your trajet in real-time. Your position is only
+            used while tracking is active and you can stop at any time.
+          </p>
+          {geoPermissionState === 'denied' && (
+            <p className="text-sm text-red-600 mt-2">
+              Location is blocked. Enable it in your browser settings to proceed.
+            </p>
+          )}
+        </div>
+      )}
 
       {/* Timer Display */}
       <div className="ios-card p-8 text-center">
