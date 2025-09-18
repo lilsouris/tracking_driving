@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { getTrajets, getTrajetStats } from '../lib/supabase'
-import { Trajet } from '../types/database'
+import type { Trajet } from '../types/database'
 
 const Dashboard: React.FC = () => {
   const { user, isAnonymous } = useAuth()

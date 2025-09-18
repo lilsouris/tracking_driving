@@ -1,5 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
-import { Database, Profile, Trajet, NewTrajet, UpdateTrajet, GPSPosition } from '../types/database'
+import type { Profile, NewTrajet, UpdateTrajet } from '../types/database'
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
@@ -8,7 +8,8 @@ if (!supabaseUrl || !supabaseAnonKey) {
   throw new Error('Missing Supabase environment variables')
 }
 
-export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey)
+// Use untyped client to avoid strict generic mismatches during early development
+export const supabase = createClient(supabaseUrl, supabaseAnonKey)
 
 // Auth helper functions
 export const signUp = async (email: string, password: string) => {
@@ -114,12 +115,12 @@ export const getTrajetStats = async (userId: string) => {
   
   if (error) return { data: null, error }
   
-  const stats = data.reduce((acc, trajet) => {
-    acc.totalDistance += trajet.distance_km || 0
-    acc.totalDuration += trajet.duration_seconds || 0
-    acc.totalManoeuvres += trajet.manoeuvres || 0
-    acc.cityDriving += trajet.city_percentage || 0
-    acc.nightDrives += trajet.is_night ? 1 : 0
+  const stats = (data as any[]).reduce((acc, trajet: any) => {
+    acc.totalDistance += trajet?.distance_km || 0
+    acc.totalDuration += trajet?.duration_seconds || 0
+    acc.totalManoeuvres += trajet?.manoeuvres || 0
+    acc.cityDriving += trajet?.city_percentage || 0
+    acc.nightDrives += trajet?.is_night ? 1 : 0
     acc.totalTrajets += 1
     return acc
   }, {

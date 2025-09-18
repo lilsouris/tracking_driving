@@ -2,10 +2,10 @@ import React, { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { createTrajet, updateTrajet } from '../lib/supabase'
-import { GPSPosition } from '../types/database'
+import type { GPSPosition } from '../types/database'
 
 const AddTrajet: React.FC = () => {
-  const { user, isAnonymous } = useAuth()
+  const { user } = useAuth()
   const [isTracking, setIsTracking] = useState(false)
   const [startTime, setStartTime] = useState<Date | null>(null)
   const [elapsedTime, setElapsedTime] = useState(0)
@@ -126,9 +126,9 @@ const AddTrajet: React.FC = () => {
             latitude: position.coords.latitude,
             longitude: position.coords.longitude,
             timestamp: Date.now(),
-            accuracy: position.coords.accuracy,
-            altitude: position.coords.altitude,
-            speed: position.coords.speed
+            accuracy: position.coords.accuracy ?? undefined,
+            altitude: position.coords.altitude ?? undefined,
+            speed: position.coords.speed ?? undefined
           }
           setPositions(prev => [...prev, newPosition])
           
