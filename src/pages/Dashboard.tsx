@@ -126,26 +126,40 @@ const Dashboard: React.FC = () => {
         </div>
       </div>
 
-      <div className="max-w-md mx-auto px-6 py-6 space-y-6">
+      <div className="max-w-md mx-auto px-5 py-6 space-y-6">
         {/* Stats Overview */}
-        <div className="bg-white/90 backdrop-blur-sm rounded-3xl p-6 shadow-xl border border-white/20">
-          <h2 className="text-lg font-semibold text-gray-900 mb-6">Vos statistiques de conduite</h2>
-          <div className="grid grid-cols-2 gap-6">
-            <div className="text-center">
-              <div className="text-4xl font-bold text-blue-600 mb-1">{stats.totalHours}h</div>
-              <div className="text-sm text-gray-600 font-medium">Temps total</div>
+        <div>
+          <h2 className="text-[22px] font-bold text-gray-900 mb-3">Tableau de bord</h2>
+          <p className="text-gray-500 mb-5">Suivez votre progression en conduite supervisée</p>
+          <div className="grid grid-cols-2 gap-4">
+            {/* Card */}
+            <div className="rounded-2xl bg-gray-100 p-5 shadow-sm">
+              <div className="flex items-center gap-2 text-blue-600 mb-2">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                <span className="text-sm">Heures totales</span>
+              </div>
+              <div className="text-3xl font-semibold text-gray-900">{Number(stats.totalHours || 0).toFixed(1)}h</div>
             </div>
-            <div className="text-center">
-              <div className="text-4xl font-bold text-green-600 mb-1">{stats.totalDistance.toFixed(1)}km</div>
-              <div className="text-sm text-gray-600 font-medium">Distance</div>
+            <div className="rounded-2xl bg-gray-100 p-5 shadow-sm">
+              <div className="flex items-center gap-2 text-blue-600 mb-2">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a2 2 0 01-2.828 0L6.343 16.657a8 8 0 1111.314 0z"/></svg>
+                <span className="text-sm">Km parcourus</span>
+              </div>
+              <div className="text-3xl font-semibold text-gray-900">{(stats.totalDistance ?? 0).toFixed(1)}</div>
             </div>
-            <div className="text-center">
-              <div className="text-4xl font-bold text-orange-600 mb-1">{stats.totalManoeuvres}</div>
-              <div className="text-sm text-gray-600 font-medium">Manoeuvres</div>
+            <div className="rounded-2xl bg-gray-100 p-5 shadow-sm">
+              <div className="flex items-center gap-2 text-blue-600 mb-2">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                <span className="text-sm">Manœuvres</span>
+              </div>
+              <div className="text-3xl font-semibold text-gray-900">{stats.totalManoeuvres ?? 0}</div>
             </div>
-            <div className="text-center">
-              <div className="text-4xl font-bold text-purple-600 mb-1">{stats.averageCityPercentage}%</div>
-              <div className="text-sm text-gray-600 font-medium">Conduite urbaine</div>
+            <div className="rounded-2xl bg-gray-100 p-5 shadow-sm">
+              <div className="flex items-center gap-2 text-blue-600 mb-2">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16"/></svg>
+                <span className="text-sm">Conduite ville</span>
+              </div>
+              <div className="text-3xl font-semibold text-gray-900">{stats.averageCityPercentage ?? 0}%</div>
             </div>
           </div>
         </div>
@@ -159,47 +173,40 @@ const Dashboard: React.FC = () => {
             </Link>
           </div>
 
-          <div className="space-y-3">
+          <div className="space-y-4">
             {recentTrajets.length > 0 ? (
               recentTrajets.map((trajet) => (
-                <div key={trajet.id} className="bg-white/90 backdrop-blur-sm rounded-2xl p-5 shadow-lg border border-white/20">
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center space-x-4">
-                      <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-full flex items-center justify-center shadow-md">
-                        <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                        </svg>
-                      </div>
-                      <div>
-                        <div className="font-semibold text-gray-900 text-lg">{formatDate(trajet.start_time)}</div>
-                        <div className="text-sm text-gray-600">
-                          {trajet.is_night ? '🌙 Conduite nocturne' : '☀️ Conduite diurne'}
-                        </div>
+                <div key={trajet.id} className="rounded-2xl bg-white shadow-sm border border-gray-200 p-5">
+                  {/* Date & time row */}
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="text-[17px] font-semibold text-gray-900">{formatDate(trajet.start_time)}</div>
+                      <div className="text-gray-500 text-sm">{trajet.start_time ? new Date(trajet.start_time).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : '--'}
+                        {trajet.end_time ? ` – ${new Date(trajet.end_time).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}` : ''}
                       </div>
                     </div>
-                    <Link
-                      to={`/map/${trajet.id}`}
-                      className="text-blue-600 hover:text-blue-800 p-2 rounded-full hover:bg-blue-50 transition-colors"
-                    >
-                      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                      </svg>
+                    <Link to={`/map/${trajet.id}`} className="text-blue-600 hover:text-blue-800 p-2">
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a2 2 0 01-2.828 0L6.343 16.657a8 8 0 1111.314 0z"/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
                     </Link>
                   </div>
-                  <div className="grid grid-cols-3 gap-6 text-sm">
-                    <div>
-                      <p className="text-gray-500 text-xs uppercase tracking-wide font-medium">Durée</p>
-                      <p className="font-semibold text-gray-900 text-lg">{formatTime(trajet.duration_seconds || 0)}</p>
-                    </div>
-                    <div>
-                      <p className="text-gray-500 text-xs uppercase tracking-wide font-medium">Distance</p>
-                      <p className="font-semibold text-gray-900 text-lg">{trajet.distance_km.toFixed(1)}km</p>
-                    </div>
-                    <div>
-                      <p className="text-gray-500 text-xs uppercase tracking-wide font-medium">Urbain %</p>
-                      <p className="font-semibold text-gray-900 text-lg">{trajet.city_percentage}%</p>
-                    </div>
+
+                  {/* Metrics row */}
+                  <div className="mt-3 flex items-center gap-5 text-gray-700">
+                    <div className="flex items-center gap-2"><span>🚗</span><span>{(trajet.distance_km ?? 0).toFixed(1)} km</span></div>
+                    <div className="flex items-center gap-2"><span>🕒</span><span>{formatTime(trajet.duration_seconds ?? 0)}</span></div>
+                  </div>
+
+                  {/* Extra row */}
+                  <div className="mt-2 flex items-center gap-5 text-gray-600 text-sm">
+                    <div className="flex items-center gap-2"><span>⚙️</span><span>{trajet.manoeuvres ?? 0} manœuvres</span></div>
+                    <div className="flex items-center gap-2"><span>{trajet.is_night ? '🌙' : '☀️'}</span><span>{trajet.is_night ? 'Nuit' : 'Jour'}</span></div>
+                  </div>
+
+                  {/* Road type row - placeholders */}
+                  <div className="mt-3 flex items-center gap-6 text-gray-600 text-sm">
+                    <div className="flex items-center gap-2"><span>🛣️</span><span>Autoroute 60%</span></div>
+                    <div className="flex items-center gap-2"><span>🏙️</span><span>Ville {trajet.city_percentage ?? 0}%</span></div>
+                    <div className="flex items-center gap-2"><span>🌾</span><span>Campagne 10%</span></div>
                   </div>
                 </div>
               ))
