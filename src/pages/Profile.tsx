@@ -96,8 +96,8 @@ const Profile: React.FC = () => {
   // Debug logging
   console.log('Profile page - user:', user, 'isAnonymous:', isAnonymous, 'loading:', loading)
 
-  // Show auth form if in guest mode
-  if (isAnonymous) {
+  // Show auth form if user is not logged in
+  if (!user) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
         <div className="w-full max-w-md">
@@ -173,8 +173,7 @@ const Profile: React.FC = () => {
             <div className="mt-8 pt-6 border-t border-gray-200">
               <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
                 <p className="text-sm text-blue-800 text-center">
-                  <strong>Mode invité actuel :</strong> Vos données sont sauvegardées localement. 
-                  Créez un compte pour les synchroniser et y accéder depuis n'importe quel appareil.
+                  <strong>Connectez-vous :</strong> Créez un compte ou connectez-vous pour accéder à votre profil et synchroniser vos données.
                 </p>
               </div>
             </div>
