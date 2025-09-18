@@ -227,29 +227,7 @@ const Dashboard: React.FC = () => {
           </div>
         </div>
 
-        {/* Quick Actions */}
-        <div className="space-y-4">
-          <Link
-            to="/add-trajet"
-            className="block w-full bg-gradient-to-r from-blue-500 to-indigo-600 text-white text-center py-5 rounded-2xl font-semibold text-lg shadow-xl hover:shadow-2xl transition-all transform hover:scale-105"
-          >
-            Nouveau trajet
-          </Link>
-          <div className="grid grid-cols-2 gap-4">
-            <Link
-              to="/trajets"
-              className="bg-white/90 backdrop-blur-sm text-gray-700 text-center py-4 rounded-2xl font-semibold shadow-lg border border-white/20 hover:shadow-xl transition-all"
-            >
-              Historique
-            </Link>
-            <Link
-              to="/profile"
-              className="bg-white/90 backdrop-blur-sm text-gray-700 text-center py-4 rounded-2xl font-semibold shadow-lg border border-white/20 hover:shadow-xl transition-all"
-            >
-              Profil
-            </Link>
-          </div>
-        </div>
+        {/* Quick Actions removed per request */}
       </div>
     </div>
   )
