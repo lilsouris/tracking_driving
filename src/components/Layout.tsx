@@ -14,37 +14,6 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white shadow-sm border-b border-gray-200">
-        <div className="max-w-md mx-auto px-4 py-3">
-          <div className="flex items-center justify-between">
-            <h1 className="text-xl font-semibold text-gray-900">DriveTracker</h1>
-            <div className="flex items-center space-x-2">
-              {user ? (
-                <div className="flex items-center space-x-2">
-                  <span className="text-sm text-gray-600">{user.email}</span>
-                  <button
-                    onClick={signOut}
-                    className="text-sm text-blue-600 hover:text-blue-800"
-                  >
-                    Sign Out
-                  </button>
-                </div>
-              ) : isAnonymous ? (
-                <span className="text-sm text-gray-500">Guest Mode</span>
-              ) : (
-                <Link
-                  to="/login"
-                  className="text-sm text-blue-600 hover:text-blue-800"
-                >
-                  Sign In
-                </Link>
-              )}
-            </div>
-          </div>
-        </div>
-      </header>
-
       {/* Main Content */}
       <main className="max-w-md mx-auto">
         {children}
