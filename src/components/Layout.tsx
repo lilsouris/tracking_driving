@@ -7,9 +7,6 @@ interface LayoutProps {
 }
 
 const Layout: React.FC<LayoutProps> = ({ children }) => {
-  // Note: we don't need auth info here currently
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const { user, signOut, isAnonymous } = useAuth()
   const location = useLocation()
   const navigate = useNavigate()
 

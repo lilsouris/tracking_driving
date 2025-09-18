@@ -14,13 +14,11 @@ const Dashboard: React.FC = () => {
     totalTrajets: 0
   })
   const [recentTrajets, setRecentTrajets] = useState<Trajet[]>([])
-  const [loading, setLoading] = useState(false)
 
   useEffect(() => {
     const loadData = async () => {
       if (!user && !isAnonymous) {
         // Auth state not resolved yet; avoid infinite skeleton
-        setLoading(false)
         return
       }
       
@@ -76,8 +74,6 @@ const Dashboard: React.FC = () => {
         }
       } catch (error) {
         console.error('Error loading dashboard data:', error)
-      } finally {
-        setLoading(false)
       }
     }
 
