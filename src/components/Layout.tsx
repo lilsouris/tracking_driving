@@ -1,5 +1,5 @@
 import React from 'react'
-import { Link, useLocation } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 
 interface LayoutProps {
@@ -9,6 +9,7 @@ interface LayoutProps {
 const Layout: React.FC<LayoutProps> = ({ children }) => {
   const { user, signOut, isAnonymous } = useAuth()
   const location = useLocation()
+  const navigate = useNavigate()
 
   const isActive = (path: string) => location.pathname === path
 
@@ -37,14 +38,45 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             </Link>
 
             {/* Floating Plus Button */}
-            <Link
-              to="/add-trajet"
+            <button
+              onClick={async () => {
+                try {
+                  const pref = localStorage.getItem('geo_preference_enabled')
+                  const wantsGeo = pref ? pref === 'true' : true
+                  if (wantsGeo && 'geolocation' in navigator) {
+                    // Trigger permission prompt if still "prompt"
+                    if ('permissions' in navigator) {
+                      // @ts-ignore
+                      const status = await navigator.permissions.query({ name: 'geolocation' as PermissionName })
+                      if (status.state === 'prompt') {
+                        await new Promise<void>((resolve) => {
+                          navigator.geolocation.getCurrentPosition(
+                            () => resolve(),
+                            () => resolve(),
+                            { enableHighAccuracy: true, timeout: 8000 }
+                          )
+                        })
+                      }
+                    } else {
+                      // Fallback prompt
+                      await new Promise<void>((resolve) => {
+                        navigator.geolocation.getCurrentPosition(
+                          () => resolve(),
+                          () => resolve(),
+                          { enableHighAccuracy: true, timeout: 8000 }
+                        )
+                      })
+                    }
+                  }
+                } catch {}
+                navigate('/add-trajet')
+              }}
               className="w-16 h-16 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-full flex items-center justify-center shadow-2xl transform -translate-y-3 hover:scale-110 transition-all"
             >
               <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
               </svg>
-            </Link>
+            </button>
 
             {/* Profil Tab */}
             <Link

@@ -16,6 +16,33 @@ const AddTrajet: React.FC = () => {
   const navigate = useNavigate()
   const intervalRef = useRef<NodeJS.Timeout | null>(null)
   const [geoPermissionState, setGeoPermissionState] = useState<PermissionState | 'unsupported'>('prompt')
+  
+  const translateError = (msg: string): string => {
+    if (!msg) return ''
+    const m = msg.toLowerCase()
+    if (m.includes('location permission denied')) {
+      return 'Autorisation de localisation refusée. Activez-la dans les réglages du navigateur.'
+    }
+    if (m.includes('we need your location')) {
+      return "Nous avons besoin de votre localisation pour démarrer. Veuillez l'autoriser lorsqu'on vous le demande."
+    }
+    if (m.includes('geolocation is not supported')) {
+      return "La géolocalisation n'est pas prise en charge par ce navigateur."
+    }
+    if (m.startsWith('gps tracking error')) {
+      return 'Erreur de suivi GPS. Vérifiez vos réglages de localisation et réessayez.'
+    }
+    if (m.startsWith('failed to create trajet')) {
+      return 'Impossible de créer le trajet. Veuillez réessayer.'
+    }
+    if (m.startsWith('failed to save trajet')) {
+      return 'Impossible d’enregistrer le trajet. Veuillez réessayer.'
+    }
+    if (m.startsWith('failed to start tracking')) {
+      return 'Impossible de démarrer le suivi. Veuillez réessayer.'
+    }
+    return msg
+  }
 
   // Calculate distance between two points (Haversine formula)
   const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
@@ -84,6 +111,20 @@ const AddTrajet: React.FC = () => {
       if (permission === 'denied') {
         setError('Location permission denied. Please enable it in your browser settings.')
         return
+      }
+      // If not yet granted, explicitly prompt on each start click
+      if (permission !== 'granted') {
+        const got = await new Promise<boolean>((resolve) => {
+          navigator.geolocation.getCurrentPosition(
+            () => resolve(true),
+            () => resolve(false),
+            { enableHighAccuracy: true, timeout: 8000 }
+          )
+        })
+        if (!got) {
+          setError('We need your location to start tracking. Please allow access when prompted.')
+          return
+        }
       }
 
       const now = new Date()
@@ -290,10 +331,38 @@ const AddTrajet: React.FC = () => {
         </div>
       </div>
 
-      {/* Error Display */}
+      {/* Error Modal */}
       {error && (
-        <div className="bg-red-50 border border-red-200 rounded-xl p-4">
-          <p className="text-red-600 text-sm">{error}</p>
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/40" onClick={() => setError('')}></div>
+          <div role="alertdialog" aria-modal="true" className="relative z-10 w-11/12 max-w-md bg-white rounded-2xl shadow-xl border border-red-200">
+            <div className="p-5">
+              <p className="text-red-600 text-base">{translateError(error)}</p>
+            </div>
+            <div className="px-5 pb-5 space-y-2">
+              <button 
+                onClick={async () => {
+                  setError('')
+                  // Trigger system permission prompt
+                  if ('geolocation' in navigator) {
+                    try {
+                      await new Promise<void>((resolve) => {
+                        navigator.geolocation.getCurrentPosition(
+                          () => resolve(),
+                          () => resolve(),
+                          { enableHighAccuracy: true, timeout: 8000 }
+                        )
+                      })
+                    } catch {}
+                  }
+                }}
+                className="w-full bg-blue-600 text-white rounded-xl px-4 py-3 font-medium"
+              >
+                Autoriser la localisation
+              </button>
+              <button onClick={() => setError('')} className="w-full bg-gray-500 text-white rounded-xl px-4 py-3 font-medium">Annuler</button>
+            </div>
+          </div>
         </div>
       )}
 
