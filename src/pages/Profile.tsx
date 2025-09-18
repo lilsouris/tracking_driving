@@ -79,22 +79,24 @@ const Profile: React.FC = () => {
     }
   }
 
+  // Debug logging
+  console.log('Profile page - user:', user, 'isAnonymous:', isAnonymous, 'loading:', loading)
+
+  // Show loading state only briefly, then show auth form if no user
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
-        <div className="max-w-md mx-auto px-6 py-6">
-          <div className="animate-pulse space-y-6">
-            <div className="h-32 bg-gray-200 rounded-3xl"></div>
-            <div className="h-24 bg-gray-200 rounded-2xl"></div>
-            <div className="h-24 bg-gray-200 rounded-2xl"></div>
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+        <div className="w-full max-w-md">
+          <div className="bg-white rounded-2xl p-8 shadow-sm border border-gray-100">
+            <div className="text-center">
+              <div className="animate-spin w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full mx-auto mb-4"></div>
+              <p className="text-gray-600">Chargement...</p>
+            </div>
           </div>
         </div>
       </div>
     )
   }
-
-  // Debug logging
-  console.log('Profile page - user:', user, 'isAnonymous:', isAnonymous, 'loading:', loading)
 
   // Show auth form if user is not logged in
   if (!user) {

@@ -51,12 +51,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
       } catch (error) {
         console.error('Error checking user:', error)
+        // On error, assume no user and set anonymous
+        setIsAnonymous(true)
+        localStorage.setItem('anonymous_user', 'true')
       } finally {
         setLoading(false)
       }
     }
 
-    checkUser()
+    // Add timeout to prevent infinite loading
+    const timeoutId = setTimeout(() => {
+      console.log('Auth check timeout - setting loading to false')
+      setLoading(false)
+    }, 5000)
+
+    checkUser().finally(() => {
+      clearTimeout(timeoutId)
+    })
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
