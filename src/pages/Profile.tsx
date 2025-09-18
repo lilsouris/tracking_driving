@@ -67,9 +67,9 @@ const Profile: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
       {/* Header */}
-      <div className="bg-white shadow-sm">
+      <div className="bg-white/80 backdrop-blur-sm shadow-sm">
         <div className="max-w-md mx-auto px-6 py-6">
           <div className="flex items-center justify-between">
             <h1 className="text-2xl font-bold text-gray-900">Profil</h1>
@@ -87,7 +87,7 @@ const Profile: React.FC = () => {
 
       <div className="max-w-md mx-auto px-6 py-6 space-y-6">
         {/* Profile Card */}
-        <div className="bg-white rounded-3xl p-6 shadow-lg">
+        <div className="bg-white/90 backdrop-blur-sm rounded-3xl p-6 shadow-xl border border-white/20">
           <div className="text-center">
             <div className="w-20 h-20 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-full flex items-center justify-center mx-auto mb-4">
               <span className="text-2xl font-bold text-white">
@@ -150,7 +150,7 @@ const Profile: React.FC = () => {
         </div>
 
         {/* Stats Card */}
-        <div className="bg-white rounded-3xl p-6 shadow-lg">
+        <div className="bg-white/90 backdrop-blur-sm rounded-3xl p-6 shadow-xl border border-white/20">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Vos statistiques</h3>
           <div className="grid grid-cols-2 gap-4">
             <div className="text-center">
@@ -173,7 +173,7 @@ const Profile: React.FC = () => {
         </div>
 
         {/* Settings Card */}
-        <div className="bg-white rounded-3xl p-6 shadow-lg">
+        <div className="bg-white/90 backdrop-blur-sm rounded-3xl p-6 shadow-xl border border-white/20">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Paramètres</h3>
           <div className="space-y-4">
             <div className="flex items-center justify-between">
@@ -198,7 +198,7 @@ const Profile: React.FC = () => {
         </div>
 
         {/* App Info */}
-        <div className="bg-white rounded-3xl p-6 shadow-lg">
+        <div className="bg-white/90 backdrop-blur-sm rounded-3xl p-6 shadow-xl border border-white/20">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">À propos de DriveFlow</h3>
           <div className="space-y-3 text-sm text-gray-600">
             <p>Version 1.0.0</p>
