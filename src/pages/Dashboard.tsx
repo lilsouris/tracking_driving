@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
-import { getTrajets, getTrajetStats } from '../lib/supabase'
+import { getTrajets, getTrajetStats, testSupabaseConnection } from '../lib/supabase'
 import type { Trajet } from '../types/database'
 
 const Dashboard: React.FC = () => {
@@ -139,42 +139,58 @@ const Dashboard: React.FC = () => {
         <div>
           <div className="flex items-center justify-between mb-3">
             <h2 className="text-[22px] font-bold text-gray-900">Tableau de bord</h2>
-            <button
-              onClick={() => {
-                if (user) {
-                  const loadData = async () => {
-                    setIsLoading(true)
-                    setLoadError(null)
-                    try {
-                      const [statsResult, trajetsResult] = await Promise.all([
-                        getTrajetStats(user.id),
-                        getTrajets(user.id, 5)
-                      ])
-                      
-                      console.log('Manual refresh - Dashboard data loaded:', { statsResult, trajetsResult })
-                      
-                      if (statsResult.data) setStats(statsResult.data)
-                      if (trajetsResult.data && Array.isArray(trajetsResult.data)) {
-                        setRecentTrajets(trajetsResult.data)
-                        console.log('Manual refresh - Recent trajets set:', trajetsResult.data.length)
+            <div className="flex space-x-2">
+              <button
+                onClick={async () => {
+                  console.log('Testing Supabase connection...')
+                  const result = await testSupabaseConnection()
+                  console.log('Supabase test result:', result)
+                  alert(`Supabase Test:\nConnection: ${result.connection ? 'OK' : 'FAIL'}\nAuth: ${result.auth ? 'OK' : 'FAIL'}\nError: ${result.error || 'None'}`)
+                }}
+                className="p-2 text-blue-500 hover:text-blue-700 transition-colors"
+                title="Tester la connexion Supabase"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </button>
+              <button
+                onClick={() => {
+                  if (user) {
+                    const loadData = async () => {
+                      setIsLoading(true)
+                      setLoadError(null)
+                      try {
+                        const [statsResult, trajetsResult] = await Promise.all([
+                          getTrajetStats(user.id),
+                          getTrajets(user.id, 5)
+                        ])
+                        
+                        console.log('Manual refresh - Dashboard data loaded:', { statsResult, trajetsResult })
+                        
+                        if (statsResult.data) setStats(statsResult.data)
+                        if (trajetsResult.data && Array.isArray(trajetsResult.data)) {
+                          setRecentTrajets(trajetsResult.data)
+                          console.log('Manual refresh - Recent trajets set:', trajetsResult.data.length)
+                        }
+                      } catch (error) {
+                        console.error('Manual refresh error:', error)
+                        setLoadError('Erreur lors du chargement des données')
+                      } finally {
+                        setIsLoading(false)
                       }
-                    } catch (error) {
-                      console.error('Manual refresh error:', error)
-                      setLoadError('Erreur lors du chargement des données')
-                    } finally {
-                      setIsLoading(false)
                     }
+                    loadData()
                   }
-                  loadData()
-                }
-              }}
-              className="p-2 text-gray-500 hover:text-gray-700 transition-colors"
-              title="Actualiser les données"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-              </svg>
-            </button>
+                }}
+                className="p-2 text-gray-500 hover:text-gray-700 transition-colors"
+                title="Actualiser les données"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+              </button>
+            </div>
           </div>
           <p className="text-gray-500 mb-5">Suivez votre progression en conduite supervisée</p>
           <div className="grid grid-cols-2 gap-4">
