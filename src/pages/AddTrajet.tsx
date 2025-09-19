@@ -21,6 +21,7 @@ const AddTrajet: React.FC = () => {
   const lastPosRef = useRef<GPSPosition | null>(null)
   const lastSyncAtRef = useRef<number>(0)
   const unsyncedKmRef = useRef<number>(0)
+  const timerStartTimeRef = useRef<number>(0)
   
   const translateError = (msg: string): string => {
     if (!msg) return ''
@@ -151,16 +152,18 @@ const AddTrajet: React.FC = () => {
       lastPosRef.current = null
       lastSyncAtRef.current = Date.now()
       unsyncedKmRef.current = 0
+      timerStartTimeRef.current = 0
 
-      // Start timer
+      // Start timer with more robust implementation
       console.log('Starting timer interval') // Debug log
+      timerStartTimeRef.current = now.getTime()
+      
       intervalRef.current = setInterval(() => {
-        setElapsedTime(prev => {
-          const newTime = prev + 1
-          console.log('Timer update:', newTime) // Debug log
-          return newTime
-        })
-      }, 1000)
+        const currentTime = Date.now()
+        const elapsed = Math.floor((currentTime - timerStartTimeRef.current) / 1000)
+        console.log('Timer update:', elapsed) // Debug log
+        setElapsedTime(elapsed)
+      }, 100) // Update every 100ms for smoother display
       console.log('Timer interval set:', intervalRef.current) // Debug log
 
       // Start GPS tracking (this will trigger the native prompt if state is 'prompt' or 'unsupported')
@@ -295,6 +298,7 @@ const AddTrajet: React.FC = () => {
       setWatchId(null)
     }
     setGpsActive(false)
+    // Don't reset elapsedTime here - keep it for display until save
   }
 
   // Save trajet
@@ -367,8 +371,8 @@ const AddTrajet: React.FC = () => {
     <div className="p-4 space-y-6">
       {/* Header */}
       <div className="text-center">
-        <h1 className="text-2xl font-bold text-gray-900 mb-2">Track Trajet</h1>
-        <p className="text-gray-600">Start tracking your driving session</p>
+        <h1 className="text-2xl font-bold text-gray-900 mb-2">Suivi de Trajet</h1>
+        <p className="text-gray-600">Commencer le suivi de votre session de conduite</p>
       </div>
 
       {/* Pre-permission note */}
@@ -392,7 +396,7 @@ const AddTrajet: React.FC = () => {
           {formatTime(elapsedTime)}
         </div>
         <div className="text-lg text-gray-600">
-          {isTracking ? 'Tracking...' : 'Ready to start'}
+          {isTracking ? 'Suivi en cours...' : 'Prêt à démarrer'}
         </div>
       </div>
 
@@ -408,7 +412,7 @@ const AddTrajet: React.FC = () => {
           <div className="text-2xl font-bold text-gray-900">
             {positions.length}
           </div>
-          <div className="text-sm text-gray-600">GPS Points</div>
+          <div className="text-sm text-gray-600">Points GPS</div>
         </div>
       </div>
 
@@ -450,25 +454,25 @@ const AddTrajet: React.FC = () => {
       {/* Controls */}
       <div className="space-y-4">
         {!isTracking ? (
-          <button
-            onClick={startTracking}
-            className="ios-button w-full text-lg py-4"
-          >
-            Start Tracking
-          </button>
+            <button
+              onClick={startTracking}
+              className="ios-button w-full text-lg py-4"
+            >
+              Démarrer le Suivi
+            </button>
         ) : (
           <div className="space-y-3">
             <button
               onClick={stopTracking}
               className="w-full bg-red-500 text-white rounded-xl px-6 py-4 font-medium active:bg-red-600 transition-colors"
             >
-              Stop Tracking
+              Arrêter le Suivi
             </button>
             <button
               onClick={saveTrajet}
               className="ios-button w-full text-lg py-4"
             >
-              Save Trajet
+              Sauvegarder le Trajet
             </button>
           </div>
         )}
