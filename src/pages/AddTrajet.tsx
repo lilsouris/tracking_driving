@@ -104,6 +104,11 @@ const AddTrajet: React.FC = () => {
     ensureGeoPermission()
   }, [])
 
+  // Debug timer state changes
+  useEffect(() => {
+    console.log('Timer state changed - isTracking:', isTracking, 'elapsedTime:', elapsedTime, 'intervalRef:', intervalRef.current)
+  }, [isTracking, elapsedTime])
+
   // Start tracking
   const startTracking = async () => {
     if (!navigator.geolocation) {
@@ -148,9 +153,15 @@ const AddTrajet: React.FC = () => {
       unsyncedKmRef.current = 0
 
       // Start timer
+      console.log('Starting timer interval') // Debug log
       intervalRef.current = setInterval(() => {
-        setElapsedTime(prev => prev + 1)
+        setElapsedTime(prev => {
+          const newTime = prev + 1
+          console.log('Timer update:', newTime) // Debug log
+          return newTime
+        })
       }, 1000)
+      console.log('Timer interval set:', intervalRef.current) // Debug log
 
       // Start GPS tracking (this will trigger the native prompt if state is 'prompt' or 'unsupported')
       const id = navigator.geolocation.watchPosition(
@@ -164,6 +175,8 @@ const AddTrajet: React.FC = () => {
             altitude: position.coords.altitude ?? undefined,
             speed: position.coords.speed ?? undefined
           }
+          console.log('GPS position received:', newPosition) // Debug log
+          
           // Compute incremental distance with simple sanity filters
           const prev = lastPosRef.current
           if (prev) {
@@ -172,14 +185,23 @@ const AddTrajet: React.FC = () => {
               newPosition.latitude, newPosition.longitude
             )
             const accuracy = position.coords.accuracy ?? 0
+            console.log('Distance increment:', increment, 'Accuracy:', accuracy) // Debug log
             // Ignore jumps if accuracy is very poor or increment is unrealistic (> 2km per sample)
             if (accuracy < 100 && increment < 2) {
-              setDistanceKm((d) => d + increment)
+              setDistanceKm((d) => {
+                const newDistance = d + increment
+                console.log('Distance updated:', newDistance) // Debug log
+                return newDistance
+              })
               unsyncedKmRef.current += increment
             }
           }
           lastPosRef.current = newPosition
-          setPositions(prev => [...prev, newPosition])
+          setPositions(prev => {
+            const newPositions = [...prev, newPosition]
+            console.log('GPS points count:', newPositions.length) // Debug log
+            return newPositions
+          })
           
           // Update trajet in database with new GPS data
           if (user && currentTrajetId) {
@@ -189,10 +211,25 @@ const AddTrajet: React.FC = () => {
             if (shouldSync) {
               lastSyncAtRef.current = nowTs
               unsyncedKmRef.current = 0
+              // Use current state values instead of stale closure values
+              const currentDistance = distanceKm + (increment < 2 ? increment : 0)
+              const currentPositions = [...positions, newPosition]
+              
+              console.log('Syncing to Supabase:', {
+                trajetId: currentTrajetId,
+                distance: currentDistance,
+                duration: seconds,
+                gpsPoints: currentPositions.length
+              }) // Debug log
+              
               updateTrajet(currentTrajetId, {
-                gps_trace: [...positions, newPosition],
-                distance_km: (distanceKm || 0),
+                gps_trace: currentPositions,
+                distance_km: currentDistance,
                 duration_seconds: seconds
+              }).then(result => {
+                console.log('Supabase update successful:', result) // Debug log
+              }).catch(error => {
+                console.error('Failed to update trajet:', error)
               })
             }
           }
@@ -233,6 +270,8 @@ const AddTrajet: React.FC = () => {
             gps_trace: positions,
             distance_km: distanceKm,
             duration_seconds: 0
+          }).catch(error => {
+            console.error('Failed to update initial trajet:', error)
           })
         }
       })()
@@ -244,8 +283,10 @@ const AddTrajet: React.FC = () => {
 
   // Stop tracking
   const stopTracking = () => {
+    console.log('Stopping tracking') // Debug log
     setIsTracking(false)
     if (intervalRef.current) {
+      console.log('Clearing timer interval:', intervalRef.current) // Debug log
       clearInterval(intervalRef.current)
       intervalRef.current = null
     }
@@ -267,7 +308,7 @@ const AddTrajet: React.FC = () => {
     const cityPercentage = Math.min(100, Math.max(0, 50 + Math.random() * 40))
     
     // Calculate manoeuvres (mock calculation based on distance and time)
-    const manoeuvres = Math.floor(totalDistance / 10) + Math.floor(duration / 1800)
+    const manoeuvres = Math.floor(distanceKm / 10) + Math.floor(duration / 1800)
 
     try {
       if (user && currentTrajetId) {
@@ -275,7 +316,7 @@ const AddTrajet: React.FC = () => {
         const { error } = await updateTrajet(currentTrajetId, {
           end_time: endTime.toISOString(),
           duration_seconds: duration,
-          distance_km: totalDistance,
+          distance_km: distanceKm,
           manoeuvres,
           city_percentage: Math.round(cityPercentage),
           gps_trace: positions
@@ -292,7 +333,7 @@ const AddTrajet: React.FC = () => {
           startTime: startTime.toISOString(),
           endTime: endTime.toISOString(),
           duration,
-          distance: totalDistance,
+          distance: distanceKm,
           manoeuvres,
           cityPercentage: Math.round(cityPercentage),
           isNight: startTime.getHours() < 6 || startTime.getHours() > 18,
@@ -359,7 +400,7 @@ const AddTrajet: React.FC = () => {
       <div className="grid grid-cols-2 gap-4">
         <div className="ios-card p-4 text-center">
           <div className="text-2xl font-bold text-gray-900">
-            {(distanceKm || totalDistance).toFixed(1)} km
+            {distanceKm.toFixed(1)} km
           </div>
           <div className="text-sm text-gray-600">Distance</div>
         </div>

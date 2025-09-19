@@ -14,37 +14,69 @@ const Dashboard: React.FC = () => {
     totalTrajets: 0
   })
   const [recentTrajets, setRecentTrajets] = useState<Trajet[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [loadError, setLoadError] = useState<string | null>(null)
 
   useEffect(() => {
     const loadData = async () => {
+      console.log('Dashboard useEffect - user:', user, 'isAnonymous:', isAnonymous) // Debug log
+      
       if (!user && !isAnonymous) {
         // Auth state not resolved yet; avoid infinite skeleton
+        console.log('Auth state not resolved yet, skipping load') // Debug log
+        setIsLoading(false) // Set loading to false to avoid infinite loading
         return
       }
       
+      setIsLoading(true)
+      setLoadError(null)
+      
+      // Add a safety timeout to prevent infinite loading
+      const safetyTimeout = setTimeout(() => {
+        console.log('Safety timeout reached, stopping loading') // Debug log
+        setIsLoading(false)
+      }, 15000) // 15 seconds max
+      
       try {
         if (user) {
-          const withTimeout = async (p: Promise<any>, ms = 5000) => {
+          const withTimeout = async (p: Promise<any>, ms = 10000) => {
             return Promise.race([
               p,
-              new Promise((resolve) => setTimeout(() => resolve({ data: null }), ms))
+              new Promise((resolve) => setTimeout(() => resolve({ data: null, error: 'timeout' }), ms))
             ])
           }
           // Load real data from Supabase
+          console.log('Fetching data for user:', user.id) // Debug log
           const [statsResult, trajetsResult] = await Promise.all([
             withTimeout(getTrajetStats(user.id)),
             withTimeout(getTrajets(user.id, 5))
           ])
           
-          if (statsResult.data) {
+          console.log('Dashboard data loaded:', { 
+            statsResult: { data: statsResult.data, error: statsResult.error },
+            trajetsResult: { data: trajetsResult.data, error: trajetsResult.error }
+          }) // Debug log
+          
+          if (statsResult.error) {
+            console.error('Stats error:', statsResult.error)
+            setLoadError('Erreur lors du chargement des statistiques')
+          } else if (statsResult.data) {
             setStats(statsResult.data)
           }
           
-          if (trajetsResult.data) {
+          if (trajetsResult.error) {
+            console.error('Trajets error:', trajetsResult.error)
+            setLoadError('Erreur lors du chargement des trajets')
+          } else if (trajetsResult.data && Array.isArray(trajetsResult.data)) {
             setRecentTrajets(trajetsResult.data)
+            console.log('Recent trajets set:', trajetsResult.data.length) // Debug log
+          } else {
+            console.log('No trajets data or invalid format:', trajetsResult) // Debug log
+            setRecentTrajets([]) // Ensure empty array if no data
           }
         } else {
           // Load from localStorage for anonymous users
+          console.log('Loading from localStorage for anonymous user') // Debug log
           const localTrajets = JSON.parse(localStorage.getItem('trajets') || '[]')
           setRecentTrajets(localTrajets.slice(0, 5))
           
@@ -74,6 +106,10 @@ const Dashboard: React.FC = () => {
         }
       } catch (error) {
         console.error('Error loading dashboard data:', error)
+        setLoadError('Erreur lors du chargement des données')
+      } finally {
+        clearTimeout(safetyTimeout) // Clear the safety timeout
+        setIsLoading(false)
       }
     }
 
@@ -101,7 +137,45 @@ const Dashboard: React.FC = () => {
       <div className="max-w-md mx-auto px-5 py-6 space-y-6">
         {/* Stats Overview */}
         <div>
-          <h2 className="text-[22px] font-bold text-gray-900 mb-3">Tableau de bord</h2>
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-[22px] font-bold text-gray-900">Tableau de bord</h2>
+            <button
+              onClick={() => {
+                if (user) {
+                  const loadData = async () => {
+                    setIsLoading(true)
+                    setLoadError(null)
+                    try {
+                      const [statsResult, trajetsResult] = await Promise.all([
+                        getTrajetStats(user.id),
+                        getTrajets(user.id, 5)
+                      ])
+                      
+                      console.log('Manual refresh - Dashboard data loaded:', { statsResult, trajetsResult })
+                      
+                      if (statsResult.data) setStats(statsResult.data)
+                      if (trajetsResult.data && Array.isArray(trajetsResult.data)) {
+                        setRecentTrajets(trajetsResult.data)
+                        console.log('Manual refresh - Recent trajets set:', trajetsResult.data.length)
+                      }
+                    } catch (error) {
+                      console.error('Manual refresh error:', error)
+                      setLoadError('Erreur lors du chargement des données')
+                    } finally {
+                      setIsLoading(false)
+                    }
+                  }
+                  loadData()
+                }
+              }}
+              className="p-2 text-gray-500 hover:text-gray-700 transition-colors"
+              title="Actualiser les données"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+            </button>
+          </div>
           <p className="text-gray-500 mb-5">Suivez votre progression en conduite supervisée</p>
           <div className="grid grid-cols-2 gap-4">
             {/* Card */}
@@ -154,7 +228,54 @@ const Dashboard: React.FC = () => {
           </div>
 
           <div className="space-y-4">
-            {recentTrajets.length > 0 ? (
+            {isLoading ? (
+              <div className="bg-white/90 backdrop-blur-sm rounded-2xl p-8 text-center shadow-lg border border-white/20">
+                <div className="w-20 h-20 bg-gradient-to-r from-blue-100 to-indigo-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                  <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+                </div>
+                <h3 className="text-xl font-semibold text-gray-900 mb-3">Chargement...</h3>
+                <p className="text-gray-600">Récupération de vos trajets</p>
+              </div>
+            ) : loadError ? (
+              <div className="bg-white/90 backdrop-blur-sm rounded-2xl p-8 text-center shadow-lg border border-white/20">
+                <div className="w-20 h-20 bg-gradient-to-r from-red-100 to-pink-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                  <svg className="w-10 h-10 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                  </svg>
+                </div>
+                <h3 className="text-xl font-semibold text-gray-900 mb-3">Erreur de chargement</h3>
+                <p className="text-gray-600 mb-6">{loadError}</p>
+                <button 
+                  onClick={() => {
+                    if (user) {
+                      const loadData = async () => {
+                        setIsLoading(true)
+                        setLoadError(null)
+                        try {
+                          const [statsResult, trajetsResult] = await Promise.all([
+                            getTrajetStats(user.id),
+                            getTrajets(user.id, 5)
+                          ])
+                          
+                          if (statsResult.data) setStats(statsResult.data)
+                          if (trajetsResult.data && Array.isArray(trajetsResult.data)) {
+                            setRecentTrajets(trajetsResult.data)
+                          }
+                        } catch (error) {
+                          setLoadError('Erreur lors du chargement des données')
+                        } finally {
+                          setIsLoading(false)
+                        }
+                      }
+                      loadData()
+                    }
+                  }}
+                  className="inline-block bg-gradient-to-r from-blue-500 to-indigo-600 text-white px-8 py-4 rounded-2xl font-semibold shadow-lg hover:shadow-xl transition-all"
+                >
+                  Réessayer
+                </button>
+              </div>
+            ) : recentTrajets.length > 0 ? (
               recentTrajets.map((trajet) => (
                 <div key={trajet.id} className="rounded-2xl bg-white shadow-sm border border-gray-200 p-5">
                   {/* Date & time row */}
